@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSession, chunkSentence } from '../sentences'
 import { hasOnlyChosung, calcAccuracy } from '../utils'
+import { playChunkDone, playSentenceDone, playSessionComplete } from '../sounds'
 import './TrainingScreen.css'
 
 const DELAY_MS = 800
@@ -98,6 +99,7 @@ export default function TrainingScreen({ onComplete }) {
 
     if (chunkIndex < chunks.length - 1) {
       // Next chunk
+      playChunkDone()
       setChunkIndex(prev => prev + 1)
       setInputValue('')
     } else {
@@ -120,9 +122,11 @@ export default function TrainingScreen({ onComplete }) {
       setAllResults(newResults)
 
       if (sentenceIndex < sessionSentences.length - 1) {
+        playSentenceDone()
         setSentenceIndex(prev => prev + 1)
       } else {
         // Session complete
+        playSessionComplete()
         const totalTime = Date.now() - sessionStartTime
         onComplete({
           sentences: newResults,

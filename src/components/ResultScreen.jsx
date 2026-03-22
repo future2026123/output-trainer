@@ -1,6 +1,55 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { diffStrings, formatTime } from '../utils'
 import './ResultScreen.css'
+
+function Particles() {
+  const particles = useMemo(() => {
+    return Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      delay: Math.random() * 0.8,
+      duration: 1.5 + Math.random() * 2,
+      size: 4 + Math.random() * 8,
+      color: ['#7c6fea', '#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa'][Math.floor(Math.random() * 6)],
+      drift: -30 + Math.random() * 60,
+    }))
+  }, [])
+
+  return (
+    <div className="particles-container">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="particle"
+          style={{
+            left: `${p.x}%`,
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            '--drift': `${p.drift}px`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function CountUp({ target, duration = 1200 }) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    const start = performance.now()
+    const step = (now) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // easeOutCubic
+      setValue(Math.round(eased * target))
+      if (progress < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }, [target, duration])
+  return <>{value}</>
+}
 
 export default function ResultScreen({ results, onRestart }) {
   const { sentences, totalTime, averageAccuracy, chosungViolations } = results
@@ -14,7 +63,15 @@ export default function ResultScreen({ results, onRestart }) {
 
   return (
     <div className="result-screen">
+      <Particles />
+
       <div className="result-header">
+        <div className="complete-icon">
+          <svg viewBox="0 0 52 52" className="checkmark-svg">
+            <circle className="checkmark-circle" cx="26" cy="26" r="24" fill="none" />
+            <path className="checkmark-check" fill="none" d="M14 27l7 7 16-16" />
+          </svg>
+        </div>
         <h1 className="result-title">훈련 완료</h1>
         <p className="result-subtitle">세션 리포트</p>
       </div>
@@ -22,7 +79,7 @@ export default function ResultScreen({ results, onRestart }) {
       {/* Stats cards */}
       <div className="stats-grid">
         <div className={`stat-card accent`}>
-          <span className="stat-value">{averageAccuracy}%</span>
+          <span className="stat-value"><CountUp target={averageAccuracy} />%</span>
           <span className="stat-label">정확도</span>
         </div>
         <div className="stat-card">
