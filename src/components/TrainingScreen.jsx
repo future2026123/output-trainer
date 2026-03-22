@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSession, chunkSentence } from '../sentences'
-import { hasOnlyChosung, endsWithChosung, calcAccuracy } from '../utils'
+import { hasOnlyChosung, calcAccuracy } from '../utils'
 import './TrainingScreen.css'
 
 const DELAY_MS = 800
@@ -22,6 +22,8 @@ export default function TrainingScreen({ onComplete }) {
 
   const inputRef = useRef(null)
   const lockTimerRef = useRef(null)
+  const composingRef = useRef(false)
+  const warningTimerRef = useRef(null)
 
   // Initialize chunks when sentence changes
   useEffect(() => {
@@ -56,25 +58,32 @@ export default function TrainingScreen({ onComplete }) {
   useEffect(() => {
     return () => {
       if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
     }
   }, [])
 
   const handleInput = (e) => {
-    const val = e.target.value
-    setInputValue(val)
+    setInputValue(e.target.value)
+  }
 
-    // Chosung detection
-    if (hasOnlyChosung(val) || endsWithChosung(val)) {
+  // Only check chosung after IME composition ends (not during)
+  const handleCompositionStart = () => {
+    composingRef.current = true
+  }
+
+  const handleCompositionEnd = (e) => {
+    composingRef.current = false
+    const val = e.target.value
+    if (hasOnlyChosung(val)) {
       setChosungWarning(true)
       setChosungCount(prev => prev + 1)
-      setTimeout(() => setChosungWarning(false), 1200)
-    } else {
-      setChosungWarning(false)
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
+      warningTimerRef.current = setTimeout(() => setChosungWarning(false), 2000)
     }
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !isLocked) {
+    if (e.key === 'Enter' && !isLocked && !composingRef.current) {
       e.preventDefault()
       submitChunk()
     }
@@ -196,6 +205,8 @@ export default function TrainingScreen({ onComplete }) {
           value={inputValue}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           disabled={isLocked}
           placeholder={isLocked ? '잠시 기다려주세요...' : '입력 후 Enter'}
           autoComplete="off"
@@ -209,13 +220,15 @@ export default function TrainingScreen({ onComplete }) {
         )}
       </div>
 
-      {/* Chosung warning */}
-      {chosungWarning && (
-        <div className="chosung-alert">
-          <span className="alert-icon">⚠</span>
-          초성 입력 감지 — 완성형 한글로 입력하세요
-        </div>
-      )}
+      {/* Chosung warning — fixed height wrapper to prevent layout shift */}
+      <div className="chosung-alert-wrap">
+        {chosungWarning && (
+          <div className="chosung-alert">
+            <span className="alert-icon">⚠</span>
+            초성 입력 감지 — 완성형 한글로 입력하세요
+          </div>
+        )}
+      </div>
 
       {/* Chunk sub-progress */}
       <div className="chunk-progress-bar-wrap">

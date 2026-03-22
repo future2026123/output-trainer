@@ -243,19 +243,26 @@
   box-shadow: 0 4px 16px var(--accent-glow);
 }
 
-/* Chosung alert */
+/* Chosung alert — fixed wrapper prevents layout shift */
+.chosung-alert-wrap {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .chosung-alert {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 8px 20px;
   background: var(--warning-soft);
   border: 1px solid rgba(251, 191, 36, 0.3);
   border-radius: var(--radius-md);
   color: var(--warning);
   font-size: 13px;
   font-weight: 700;
-  animation: slideDown 0.3s ease;
+  animation: fadeIn 0.2s ease;
 }
 
 .alert-icon {
